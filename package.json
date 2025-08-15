@@ -1,0 +1,17 @@
+{
+  "name": "money-account-tel-bot",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run ./main.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "telegraf": "^4.16.3"
+  }
+}
