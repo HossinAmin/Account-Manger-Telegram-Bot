@@ -1,6 +1,6 @@
 import { Telegraf } from "telegraf";
 import { message } from "telegraf/filters";
-import { parseMessage, parseTransactions } from "./utils";
+import { isUserWhiteListed, parseMessage, parseTransactions } from "./utils";
 import {
   createAccount,
   createTransaction,
@@ -20,14 +20,28 @@ let selectedAccountId: string | null = null;
 let awaitingAccountCreation = false;
 
 bot.start((ctx) => {
-  ctx.reply("Welcome to account manger choose:", {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: "Create Account", callback_data: "create_account" }],
-        [{ text: "List Accounts", callback_data: "list_accounts" }],
-      ],
-    },
-  });
+  if (isUserWhiteListed(ctx.from.id.toString()))
+    ctx.reply("🏦 Welcome to account manger:", {
+      reply_markup: {
+        inline_keyboard: [
+          [{ text: "Create Account", callback_data: "create_account" }],
+          [{ text: "List Accounts", callback_data: "list_accounts" }],
+        ],
+      },
+    });
+  else ctx.reply("❌ Your user is not whitelisted to use this bot.");
+});
+
+bot.telegram.setMyCommands([
+  {
+    command: "start",
+    description: "start bot and gives you list of commands",
+  },
+]);
+
+bot.use((ctx, next) => {
+  if (isUserWhiteListed(ctx.from?.id.toString() ?? "")) next();
+  else ctx.reply("❌ Your user is not whitelisted to use this bot.");
 });
 
 bot.action("list_accounts", (ctx) => {

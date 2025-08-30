@@ -1,4 +1,5 @@
 import type { ParsedTransaction, Transaction } from "../types";
+import { getAllUsers } from "./store";
 
 export function parseMessage(text: string): ParsedTransaction | null {
   text = text.trim();
@@ -51,4 +52,8 @@ export function parseTransactions(transactions: Transaction[]) {
     text + `\n\n${totalEmoji} Total: ${totalSign}${formattedTotal}`;
 
   return finalText;
+}
+
+export function isUserWhiteListed(id: string) {
+  return !!getAllUsers().find((user) => user.id === id);
 }

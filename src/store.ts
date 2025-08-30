@@ -21,8 +21,9 @@ const insertTransactionStmt = db.prepare(
 const selectAllAccountsStmt = db.prepare(
   "SELECT id, name FROM Accounts ORDER BY name"
 );
+const selectAllUsersStmt = db.prepare("SELECT * FROM Users");
 const selectTransactionsByAccountStmt = db.prepare(
-  "SELECT id, label, amount, account FROM Transactions WHERE account = ? ORDER BY id DESC"
+  "SELECT id, label, amount, account FROM Transactions WHERE account = ? ORDER BY created_at"
 );
 const selectAccountByIdStmt = db.prepare(
   "SELECT id, name FROM Accounts WHERE id = ?"
@@ -182,8 +183,19 @@ function getAllAccountsWithBalances(): (Account & { balance: number })[] {
   }));
 }
 
+/**
+ * Gets all users
+ * @returns Array of accounts with calculated balances
+ */
+function getAllUsers() {
+  const users = selectAllUsersStmt.all() as { id: string }[];
+
+  return users;
+}
+
 // Export all functions
 export {
+  getAllUsers,
   createAccount,
   createTransaction,
   getAllAccounts,
