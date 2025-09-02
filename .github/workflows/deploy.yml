@@ -1,0 +1,51 @@
+name: Deploy Server
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install SSH Key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.EC2_SSH_KEY }}
+
+      - name: Add remote to known_hosts
+        run: ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy deployment script to EC2
+        run: |
+          scp ./scripts/deploy.sh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }}:~/deploy.sh
+
+      - name: Execute deployment script on EC2
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          DB_PATH: ${{ secrets.DB_PATH }}
+        run: |
+          ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "chmod +x ~/deploy.sh && bash ~/deploy.sh"
+
+      - name: Health Check
+        run: |
+          ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} << 'HEALTHCHECK'
+          set -e
+          echo "Performing health check..."
+          # Check if the process is marked as 'online' in PM2
+          if pm2 status telegram-bot | grep -q "online"; then
+            echo "✅ Bot is running successfully!"
+            pm2 logs telegram-bot --lines 20 --nostream
+          else
+            echo "❌ Bot is not running or has failed!"
+            pm2 logs telegram-bot --lines 50 --nostream
+            exit 1
+          fi
+          HEALTHCHECK
+
+      - name: Cleanup remote script
+        if: always()
+        run: |
+          ssh ${{ secrets.EC2_USERNAME }}@${{ secrets.EC2_HOST }} "rm ~/deploy.sh"
